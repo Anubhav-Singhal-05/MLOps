@@ -3,7 +3,7 @@ stages:
     cmd: python src/data_preprocessing.py
     deps:
       - src/data_preprocessing.py
-      - airline.csv.shuffle
+      - data/airline.csv.shuffle
     outs:
       - data/processed
 
