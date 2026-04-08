@@ -18,6 +18,7 @@ jobs:
         run: |
           pip install dvc[gdrive]
           echo '${{ secrets.GDRIVE_CREDENTIALS_DATA }}' > dvc-sa.json
+          dvc remote add -d myremote gdrive://1ntnai1vEmd-hojnVFn5C1KcBJb4Q9DrT
           dvc remote modify myremote gdrive_use_service_account true
           dvc remote modify myremote gdrive_service_account_json_file_path dvc-sa.json
       
