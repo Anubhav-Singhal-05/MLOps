@@ -1,0 +1,68 @@
+name: MLOps Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * *'   # Daily check for data/code updates
+
+jobs:
+  # JOB 1: Check for Data Updates
+  data-monitor:
+    runs-on: ubuntu-latest
+    outputs:
+      data_changed: ${{ steps.check-data.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup DVC & Auth
+        run: |
+          pip install dvc[gdrive]
+          echo '${{ secrets.GDRIVE_CREDENTIALS_DATA }}' > dvc-sa.json
+          dvc remote modify myremote gdrive_use_service_account true
+          dvc remote modify myremote gdrive_service_account_json_file_path dvc-sa.json
+      
+      - name: Check for Data Changes
+        id: check-data
+        run: |
+          dvc status -r myremote --cloud > status.txt
+          if grep -q "new" status.txt || grep -q "modified" status.txt; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  # JOB 2: Retrain and Verify
+  retrain-and-verify:
+    needs: data-monitor
+    # Run if code is pushed OR if the monitor found new data
+    if: github.event_name == 'push' || needs.data-monitor.outputs.data_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Environment
+        run: |
+          pip install dvc[gdrive] numpy pyspark==3.5.0
+          echo '${{ secrets.GDRIVE_CREDENTIALS_DATA }}' > dvc-sa.json
+          dvc remote modify myremote gdrive_use_service_account true
+          dvc remote modify myremote gdrive_service_account_json_file_path dvc-sa.json
+      
+      - name: Pull Data
+        run: dvc pull
+
+      - name: Execute MLOps Pipeline
+        run: |
+          docker-compose up -d
+          sleep 15
+          docker exec -u 0 spark-master pip install numpy
+          docker exec -u 0 spark-worker pip install numpy
+          dvc repro
+
+      - name: Verify Model Accuracy
+        run: |
+          AUROC=$(jq -r '.auroc' metrics.json)
+          echo "Current Model AUROC: $AUROC"
+          if (( $(echo "$AUROC < 0.5" | bc -l) )); then
+            echo "Verification Failed: Accuracy below threshold!"
+            exit 1
+          fi
