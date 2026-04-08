@@ -49,8 +49,8 @@ jobs:
           dvc remote modify myremote gdrive_use_service_account true
           dvc remote modify myremote gdrive_service_account_json_file_path dvc-sa.json
       
-      - name: Pull Data
-        run: dvc pull
+      - name: Pull Raw Data Only
+        run: dvc pull data/airline.csv.shuffle -r myremote
 
       - name: Execute MLOps Pipeline
         run: |
