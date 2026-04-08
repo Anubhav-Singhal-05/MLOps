@@ -1,23 +1,28 @@
 stages:
   preprocess:
-    cmd: python src/data_preprocessing.py
+    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/data_preprocessing.py
     deps:
       - src/data_preprocessing.py
       - data/airline.csv.shuffle
+      - data/carriers.csv
     outs:
       - data/processed
 
   train:
-    cmd: python src/train.py
+    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/train.py
     deps:
       - src/train.py
       - data/processed
     outs:
-      - models/model
+      - models/
+      - data/test
 
   evaluate:
-    cmd: python src/evaluate.py
+    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/evaluate.py
     deps:
       - src/evaluate.py
-      - models/model
+      - models/
       - data/test
+    metrics:
+      - metrics.json:
+          cache: false

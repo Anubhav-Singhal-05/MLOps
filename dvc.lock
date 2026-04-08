@@ -1,0 +1,68 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/data_preprocessing.py
+    deps:
+    - path: data/airline.csv.shuffle
+      hash: md5
+      md5: c121f633a4e3d9b9382a65260f3fd07c
+      size: 12029207752
+    - path: data/carriers.csv
+      hash: md5
+      md5: ec92b5ec37c968e7e5d02096020ef66b
+      size: 43758
+    - path: src/data_preprocessing.py
+      hash: md5
+      md5: 63760fbc3ef22b623836474717bb4864
+      size: 3721
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 0332bb2ac3923d25adefee8a846d4071.dir
+      size: 85991094
+      nfiles: 182
+  train:
+    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/train.py
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 0332bb2ac3923d25adefee8a846d4071.dir
+      size: 85991094
+      nfiles: 182
+    - path: src/train.py
+      hash: md5
+      md5: 58ee249a103299fe185906f76c795471
+      size: 1789
+    outs:
+    - path: data/test
+      hash: md5
+      md5: 50a86420357d8b129485f9455b6cc157.dir
+      size: 14238289
+      nfiles: 18
+    - path: models/
+      hash: md5
+      md5: 2ff821396c9b394029394cbc205e0c76.dir
+      size: 13892
+      nfiles: 40
+  evaluate:
+    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/evaluate.py
+    deps:
+    - path: data/test
+      hash: md5
+      md5: 50a86420357d8b129485f9455b6cc157.dir
+      size: 14238289
+      nfiles: 18
+    - path: models/
+      hash: md5
+      md5: 2ff821396c9b394029394cbc205e0c76.dir
+      size: 13892
+      nfiles: 40
+    - path: src/evaluate.py
+      hash: md5
+      md5: 0e33c4a7ff34fa5312c0e22b48bd6091
+      size: 1419
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: f8423abb917f751ffdaac89f82bcfbb7
+      size: 48

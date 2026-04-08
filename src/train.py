@@ -3,26 +3,26 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml import Pipeline
 
-# Initialize Spark
+# 1. SETUP: Connect to the Dockerized Spark Master
 spark = SparkSession.builder \
     .appName("Airline_Project_Unit4_Pro") \
+    .master("spark://spark-master:7077") \
     .config("spark.driver.memory", "4g") \
+    .config("spark.executor.memory", "2g") \
     .config("spark.sql.shuffle.partitions", "50") \
     .config("spark.sql.ansi.enabled", "false") \
-    .config("spark.eventLog.enabled", "true") \
-    .config("spark.eventLog.dir", "file:///tmp/spark-events") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
 
 print("Loading processed data...")
-df = spark.read.parquet("data/processed")
+df = spark.read.parquet("/project/data/processed")
 
 # Split data
 train_data, test_data = df.randomSplit([0.8, 0.2], seed=42)
 
 # Save test set for evaluation
-test_data.write.mode("overwrite").parquet("data/test")
+test_data.write.mode("overwrite").parquet("/project/data/test")
 
 # Feature Engineering
 carrier_indexer = StringIndexer(inputCol="CarrierCode", outputCol="CarrierIndex", handleInvalid="keep")
@@ -48,6 +48,6 @@ print("Training model...")
 model = pipeline.fit(train_data)
 
 print("Saving model...")
-model.write().overwrite().save("models/model")
+model.write().overwrite().save("/project/models")
 
 spark.stop()

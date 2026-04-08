@@ -1,5 +1,12 @@
 /data/airline.csv.shuffle
+/data/processed/
+/data/test/
+
+/models/
+
 /client_id.json
 /dvc-sa.json
 */config
 */tmp
+
+.pydrive-user-credentials.json
