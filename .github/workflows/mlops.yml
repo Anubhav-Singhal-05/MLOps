@@ -64,7 +64,7 @@ jobs:
           docker exec -u 0 spark-worker pip install "packaging<25" numpy mlflow
           dvc repro --no-commit
           sudo chown -R runner:docker .
-          dvc commit -m "Automated retraining with new data"
+          dvc commit
 
       - name: Verify Model Accuracy
         run: |
