@@ -55,15 +55,12 @@ jobs:
       - name: Execute MLOps Pipeline
         run: |
           docker compose up -d
-
           sudo chmod -R 777 .
-
           sleep 30
-
           docker exec -u 0 spark-master pip install "packaging<25" numpy mlflow
           docker exec -u 0 spark-worker pip install "packaging<25" numpy mlflow
-
           dvc repro
+          sudo chown -R runner:docker .
 
       - name: Verify Model Accuracy
         run: |
