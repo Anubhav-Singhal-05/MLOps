@@ -56,8 +56,8 @@ jobs:
         run: |
           docker compose up -d
           sleep 15
-          docker exec -u 0 spark-master pip install numpy
-          docker exec -u 0 spark-worker pip install numpy
+          docker exec -u 0 spark-master pip install numpy mlflow
+          docker exec -u 0 spark-worker pip install numpy mlflow
           dvc repro
 
       - name: Verify Model Accuracy
