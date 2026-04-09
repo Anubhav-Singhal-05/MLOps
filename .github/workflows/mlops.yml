@@ -45,12 +45,14 @@ jobs:
         run: |
           pip install dvc[gdrive] numpy pyspark==3.5.0
           echo '${{ secrets.GDRIVE_CREDENTIALS_DATA }}' > dvc-sa.json
-          dvc remote add -d myremote gdrive://1ntnai1vEmd-hojnVFn5C1KcBJb4Q9DrT
+          dvc remote add -d myremote gdrive://1ntnai1vEmd-hojnVFn5C1KcBJb4Q9DrT --force
           dvc remote modify myremote gdrive_use_service_account true
           dvc remote modify myremote gdrive_service_account_json_file_path dvc-sa.json
-      
+
+          sudo chmod -R 777 .
+
       - name: Pull Raw Data Only
-        run: dvc pull data/airline.csv.shuffle -r myremote
+        run: dvc pull data/airline.csv.shuffle -r myremote --force
 
       - name: Execute MLOps Pipeline
         run: |
@@ -59,7 +61,7 @@ jobs:
           sleep 30
           docker exec -u 0 spark-master pip install "packaging<25" numpy mlflow
           docker exec -u 0 spark-worker pip install "packaging<25" numpy mlflow
-          dvc repro
+          dvc repro --no-commit
           sudo chown -R runner:docker .
           dvc commit -m "Automated retraining with new data"
 
