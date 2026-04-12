@@ -3,51 +3,66 @@ from pyspark.ml.feature import VectorAssembler, StringIndexer, OneHotEncoder
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml import Pipeline
 
-# 1. SETUP: Connect to the Dockerized Spark Master
-spark = SparkSession.builder \
-    .appName("Airline_Project_Unit4_Pro") \
-    .master("spark://spark-master:7077") \
-    .config("spark.driver.memory", "4g") \
-    .config("spark.executor.memory", "2g") \
-    .config("spark.sql.shuffle.partitions", "50") \
-    .config("spark.sql.ansi.enabled", "false") \
-    .getOrCreate()
+import mlflow
+import dagshub
+import mlflow.spark
 
-spark.sparkContext.setLogLevel("WARN")
+dagshub.init(repo_owner='Anubhav-Singhal-05', repo_name='MLOps', mlflow=True)
 
-print("Loading processed data...")
-df = spark.read.parquet("/project/data/processed")
 
-# Split data
-train_data, test_data = df.randomSplit([0.8, 0.2], seed=42)
+with mlflow.start_run():
+    # 1. SETUP: Connect to the Dockerized Spark Master
+    spark = SparkSession.builder \
+        .appName("Airline_Project_Unit4_Pro") \
+        .master("spark://spark-master:7077") \
+        .config("spark.driver.memory", "4g") \
+        .config("spark.executor.memory", "2g") \
+        .config("spark.sql.shuffle.partitions", "50") \
+        .config("spark.sql.ansi.enabled", "false") \
+        .getOrCreate()
 
-# Save test set for evaluation
-test_data.write.mode("overwrite").parquet("/project/data/test")
+    spark.sparkContext.setLogLevel("WARN")
 
-# Feature Engineering
-carrier_indexer = StringIndexer(inputCol="CarrierCode", outputCol="CarrierIndex", handleInvalid="keep")
-origin_indexer = StringIndexer(inputCol="Origin", outputCol="OriginIndex", handleInvalid="keep")
+    print("Loading processed data...")
+    df = spark.read.parquet("/project/data/processed")
 
-encoder = OneHotEncoder(
-    inputCols=["CarrierIndex", "OriginIndex"],
-    outputCols=["CarrierVec", "OriginVec"],
-    handleInvalid="keep"
-)
+    # Split data
+    train_data, test_data = df.randomSplit([0.8, 0.2], seed=42)
 
-assembler = VectorAssembler(
-    inputCols=["Month", "DayofMonth", "Distance", "CRSDepTime", "CarrierVec", "OriginVec"],
-    outputCol="features",
-    handleInvalid="skip"
-)
+    # Save test set for evaluation
+    test_data.write.mode("overwrite").parquet("/project/data/test")
 
-lr = LogisticRegression(featuresCol="features", labelCol="label", maxIter=10)
+    # Feature Engineering
+    carrier_indexer = StringIndexer(inputCol="CarrierCode", outputCol="CarrierIndex", handleInvalid="keep")
+    origin_indexer = StringIndexer(inputCol="Origin", outputCol="OriginIndex", handleInvalid="keep")
 
-pipeline = Pipeline(stages=[carrier_indexer, origin_indexer, encoder, assembler, lr])
+    encoder = OneHotEncoder(
+        inputCols=["CarrierIndex", "OriginIndex"],
+        outputCols=["CarrierVec", "OriginVec"],
+        handleInvalid="keep"
+    )
 
-print("Training model...")
-model = pipeline.fit(train_data)
+    assembler = VectorAssembler(
+        inputCols=["Month", "DayofMonth", "Distance", "CRSDepTime", "CarrierVec", "OriginVec"],
+        outputCol="features",
+        handleInvalid="skip"
+    )
 
-print("Saving model...")
-model.write().overwrite().save("/project/models")
+    lr = LogisticRegression(featuresCol="features", labelCol="label", maxIter=10)
 
-spark.stop()
+    pipeline = Pipeline(stages=[carrier_indexer, origin_indexer, encoder, assembler, lr])
+
+    print("Training model...")
+    model = pipeline.fit(train_data)
+
+    print("Saving model...")
+    model.write().overwrite().save("/project/models")
+
+    # 2. Register the model to DagsHub Registry
+    mlflow.spark.log_model(
+        spark_model=model, 
+        artifact_path="airline_delay_model",
+        registered_model_name="Airline_Delay_Predictor"
+    )
+    
+    spark.stop()

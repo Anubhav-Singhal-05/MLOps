@@ -13,21 +13,21 @@ stages:
       size: 43758
     - path: src/data_preprocessing.py
       hash: md5
-      md5: 63760fbc3ef22b623836474717bb4864
+      md5: ddde6d22247c1e065403b0578a27a99f
       size: 3721
     outs:
     - path: data/processed
       hash: md5
-      md5: 0332bb2ac3923d25adefee8a846d4071.dir
-      size: 85991094
+      md5: 7d83a19e7efb81343b22b3fd23729ab0.dir
+      size: 256048431
       nfiles: 182
   train:
     cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/train.py
     deps:
     - path: data/processed
       hash: md5
-      md5: 0332bb2ac3923d25adefee8a846d4071.dir
-      size: 85991094
+      md5: 7d83a19e7efb81343b22b3fd23729ab0.dir
+      size: 256048431
       nfiles: 182
     - path: src/train.py
       hash: md5
@@ -36,26 +36,26 @@ stages:
     outs:
     - path: data/test
       hash: md5
-      md5: 50a86420357d8b129485f9455b6cc157.dir
-      size: 14238289
-      nfiles: 18
+      md5: 10768c76fae3f349c9aa5b7fe2deb706.dir
+      size: 41168797
+      nfiles: 20
     - path: models/
       hash: md5
-      md5: 2ff821396c9b394029394cbc205e0c76.dir
-      size: 13892
+      md5: 60d3e5d38e42805548a95602a2205932.dir
+      size: 13951
       nfiles: 40
   evaluate:
     cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/evaluate.py
     deps:
     - path: data/test
       hash: md5
-      md5: 50a86420357d8b129485f9455b6cc157.dir
-      size: 14238289
-      nfiles: 18
+      md5: 10768c76fae3f349c9aa5b7fe2deb706.dir
+      size: 41168797
+      nfiles: 20
     - path: models/
       hash: md5
-      md5: 2ff821396c9b394029394cbc205e0c76.dir
-      size: 13892
+      md5: 60d3e5d38e42805548a95602a2205932.dir
+      size: 13951
       nfiles: 40
     - path: src/evaluate.py
       hash: md5
@@ -64,5 +64,5 @@ stages:
     outs:
     - path: metrics.json
       hash: md5
-      md5: f8423abb917f751ffdaac89f82bcfbb7
-      size: 48
+      md5: b425a5ccf7a5301213506e145edc89c5
+      size: 49

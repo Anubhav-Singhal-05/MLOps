@@ -56,12 +56,16 @@ jobs:
         run: dvc pull data/airline.csv.shuffle -r myremote --force
 
       - name: Execute MLOps Pipeline
+        env:
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.MLFLOW_TRACKING_USERNAME }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.MLFLOW_TRACKING_PASSWORD }}
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
         run: |
           docker compose up -d
           sudo chmod -R 777 .
           sleep 30
-          docker exec -u 0 spark-master pip install "packaging<25" numpy mlflow
-          docker exec -u 0 spark-worker pip install "packaging<25" numpy mlflow
+          docker exec -u 0 spark-master pip install mlflow dagshub "packaging<25" numpy
+          docker exec -u 0 spark-worker pip install mlflow dagshub "packaging<25" numpy
           dvc repro --no-commit
           sudo chown -R runner:docker .
           dvc commit
