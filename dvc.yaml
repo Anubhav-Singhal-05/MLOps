@@ -1,6 +1,6 @@
 stages:
   preprocess:
-    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/data_preprocessing.py
+    cmd: docker exec -u 0 spark-master /opt/spark/bin/spark-submit /project/src/data_preprocessing.py
     deps:
       - src/data_preprocessing.py
       - data/airline.csv.shuffle
@@ -9,7 +9,7 @@ stages:
       - data/processed
 
   train:
-    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/train.py
+    cmd: docker exec -u 0 -e DAGSHUB_USER_TOKEN="$DAGSHUB_USER_TOKEN" -e MLFLOW_TRACKING_USERNAME="$MLFLOW_TRACKING_USERNAME" -e MLFLOW_TRACKING_PASSWORD="$MLFLOW_TRACKING_PASSWORD" -e MLFLOW_TRACKING_URI="$MLFLOW_TRACKING_URI" spark-master /opt/spark/bin/spark-submit /project/src/train.py
     deps:
       - src/train.py
       - data/processed
@@ -18,7 +18,7 @@ stages:
       - data/test
 
   evaluate:
-    cmd: docker exec spark-master /opt/spark/bin/spark-submit /project/src/evaluate.py
+    cmd: docker exec -u 0 spark-master /opt/spark/bin/spark-submit /project/src/evaluate.py
     deps:
       - src/evaluate.py
       - models/
